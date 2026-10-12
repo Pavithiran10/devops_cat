@@ -53,6 +53,7 @@ pipeline {
                         '''
                     } else {
                         bat '''
+                            if exist "C:\\Users\\pavip\\anaconda3\\python.exe" set "PATH=C:\\Users\\pavip\\anaconda3;C:\\Users\\pavip\\anaconda3\\Scripts;%PATH%"
                             python --version
                             python -m venv .jenkins_venv
                         '''
@@ -74,6 +75,7 @@ pipeline {
                         '''
                     } else {
                         bat '''
+                            if exist "C:\\Users\\pavip\\anaconda3\\python.exe" set "PATH=C:\\Users\\pavip\\anaconda3;C:\\Users\\pavip\\anaconda3\\Scripts;%PATH%"
                             call .jenkins_venv\\Scripts\\activate.bat
                             python -m pip install --upgrade pip
                             python -m pip install -r requirements.txt
@@ -98,6 +100,7 @@ pipeline {
                         '''
                     } else {
                         bat '''
+                            if exist "C:\\Users\\pavip\\anaconda3\\python.exe" set "PATH=C:\\Users\\pavip\\anaconda3;C:\\Users\\pavip\\anaconda3\\Scripts;%PATH%"
                             call .jenkins_venv\\Scripts\\activate.bat
                             pytest -v --junitxml=pytest-results.xml
                         '''
@@ -124,6 +127,7 @@ pipeline {
                         '''
                     } else {
                         bat '''
+                            if exist "C:\\Users\\pavip\\anaconda3\\python.exe" set "PATH=C:\\Users\\pavip\\anaconda3;C:\\Users\\pavip\\anaconda3\\Scripts;%PATH%"
                             call .jenkins_venv\\Scripts\\activate.bat
                             python -m py_compile app.py config.py database/db.py database/init_db.py services/analytics.py
                             echo Application syntax validation passed.
@@ -175,7 +179,7 @@ pipeline {
                         bat """
                             docker rm -f ${env.TEST_CONTAINER_NAME} 2>nul || ver >nul
                             docker run -d --name ${env.TEST_CONTAINER_NAME} -p 5055:5000 ${params.IMAGE_NAME}:${params.IMAGE_TAG}
-                            timeout /t 6 /nobreak
+                            ping 127.0.0.1 -n 7 >nul
                             curl --fail --retry 5 --retry-delay 2 http://localhost:5055/api/health
                             docker rm -f ${env.TEST_CONTAINER_NAME}
                             echo Container health check successfully validated.
