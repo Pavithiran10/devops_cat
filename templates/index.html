@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitTrack - Modern Fitness Tracker & DevOps Laboratory</title>
+  <meta name="description" content="FitTrack is a full-stack automated fitness tracking application built with Flask, SQLite, Chart.js, Docker, Jenkins, and Ansible.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <!-- Chart.js CDN for lightweight, dynamic visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar Navigation for Desktop -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 20V10M12 20V4M6 20v-6"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h2>FitTrack</h2>
+          <span class="badge badge-devops">DevOps Lab</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu" id="navMenu">
+        <button class="nav-item active" data-page="dashboard" id="nav-dashboard">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-page="workouts" id="nav-workouts">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5h11M6.5 17.5h11M2 12h20M7 2v20M17 2v20"/></svg>
+          <span>Workouts</span>
+        </button>
+        <button class="nav-item" data-page="add-workout" id="nav-add-workout">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+          <span>Add Workout</span>
+        </button>
+        <button class="nav-item" data-page="activity" id="nav-activity">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          <span>Activity Tracker</span>
+        </button>
+        <button class="nav-item" data-page="analytics" id="nav-analytics">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          <span>Analytics</span>
+        </button>
+        <button class="nav-item" data-page="goals" id="nav-goals">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+          <span>Goals & Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="quick-status">
+          <div class="status-indicator online"></div>
+          <span class="status-text" id="apiStatusText">API Connected</span>
+        </div>
+        <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Light/Dark Theme">
+          <span class="theme-icon" id="themeIcon">☀️</span>
+          <span class="theme-label" id="themeLabel">Light Mode</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Container -->
+    <main class="main-content">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-toggle" id="mobileMenuBtn" aria-label="Toggle navigation">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div>
+            <h1 class="page-title" id="pageTitle">Dashboard</h1>
+            <p class="page-subtitle" id="pageSubtitle">Track your daily momentum, physical activity, and workout milestones</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-primary btn-sm" id="headerQuickAddBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Log Workout</span>
+          </button>
+          <div class="date-badge" id="currentDateBadge">Today</div>
+        </div>
+      </header>
+
+      <!-- VIEW 1: DASHBOARD -->
+      <section class="page-view active" id="view-dashboard">
+        <!-- Hero Metrics Row -->
+        <div class="metrics-grid">
+          <div class="metric-card metric-steps">
+            <div class="metric-header">
+              <span class="metric-title">Steps Today</span>
+              <div class="metric-icon">👟</div>
+            </div>
+            <div class="metric-value" id="dashSteps">0</div>
+            <div class="metric-progress-wrapper">
+              <div class="metric-progress-bar">
+                <div class="metric-progress-fill" id="dashStepProgressBar" style="width: 0%"></div>
+              </div>
+              <div class="metric-subtext">
+                <span id="dashStepProgressText">0% of 8,000 goal</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card metric-distance">
+            <div class="metric-header">
+              <span class="metric-title">Distance</span>
+              <div class="metric-icon">📍</div>
+            </div>
+            <div class="metric-value"><span id="dashDistance">0.0</span> <span class="metric-unit">km</span></div>
+            <div class="metric-subtext text-muted">Daily cumulative ground covered</div>
+          </div>
+
+          <div class="metric-card metric-calories">
+            <div class="metric-header">
+              <span class="metric-title">Calories Burned</span>
+              <div class="metric-icon">🔥</div>
+            </div>
+            <div class="metric-value"><span id="dashCalories">0</span> <span class="metric-unit">kcal</span></div>
+            <div class="metric-subtext text-muted">Active and workout metabolism</div>
+          </div>
+
+          <div class="metric-card metric-duration">
+            <div class="metric-header">
+              <span class="metric-title">Workout Duration</span>
+              <div class="metric-icon">⏱️</div>
+            </div>
+            <div class="metric-value"><span id="dashDuration">0</span> <span class="metric-unit">min</span></div>
+            <div class="metric-subtext text-muted">Total logged training today</div>
+          </div>
+
+          <div class="metric-card metric-water">
+            <div class="metric-header">
+              <span class="metric-title">Water Intake</span>
+              <div class="metric-icon">💧</div>
+            </div>
+            <div class="metric-value"><span id="dashWater">0.0</span> <span class="metric-unit">/ 2.5 L</span></div>
+            <div class="metric-progress-wrapper">
+              <div class="metric-progress-bar">
+                <div class="metric-progress-fill water-fill" id="dashWaterProgressBar" style="width: 0%"></div>
+              </div>
+              <div class="metric-subtext">
+                <span id="dashWaterProgressText">0% of daily hydration</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card metric-weekly-target">
+            <div class="metric-header">
+              <span class="metric-title">Weekly Target</span>
+              <div class="metric-icon">🎯</div>
+            </div>
+            <div class="metric-value"><span id="dashWeeklyWorkouts">0</span> <span class="metric-unit">/ 5 sessions</span></div>
+            <div class="metric-progress-wrapper">
+              <div class="metric-progress-bar">
+                <div class="metric-progress-fill target-fill" id="dashWeeklyProgressBar" style="width: 0%"></div>
+              </div>
+              <div class="metric-subtext">
+                <span id="dashWeeklyProgressText">0% of weekly goal</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly Chart & Recent Workouts -->
+        <div class="dashboard-grid-two">
+          <div class="content-card chart-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Weekly Activity Trend</h3>
+                <p class="card-subtitle">Daily steps & calories burned over the past 7 days</p>
+              </div>
+              <span class="badge badge-primary">Live Data</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="dashboardWeeklyChart"></canvas>
+            </div>
+          </div>
+
+          <div class="content-card recent-workouts-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Recent Workouts</h3>
+                <p class="card-subtitle">Latest completed fitness sessions</p>
+              </div>
+              <button class="btn btn-text" id="viewAllWorkoutsLink">View All</button>
+            </div>
+            <div class="recent-list" id="dashboardRecentList">
+              <div class="loading-state">Loading recent workouts...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: WORKOUTS HISTORY & MANAGEMENT -->
+      <section class="page-view" id="view-workouts">
+        <div class="content-card">
+          <div class="filter-toolbar">
+            <div class="filter-group">
+              <div class="search-input-wrapper">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="workoutSearchInput" class="form-control" placeholder="Search by type or notes...">
+              </div>
+
+              <select id="workoutTypeFilter" class="form-control form-select">
+                <option value="">All Workout Types</option>
+                <option value="Running">Running</option>
+                <option value="Walking">Walking</option>
+                <option value="Cycling">Cycling</option>
+                <option value="Strength Training">Strength Training</option>
+                <option value="Yoga">Yoga</option>
+              </select>
+
+              <input type="date" id="workoutDateFilter" class="form-control form-date" title="Filter by date">
+            </div>
+
+            <div class="filter-group">
+              <select id="workoutSortBy" class="form-control form-select">
+                <option value="workout_date">Sort by Date</option>
+                <option value="duration">Sort by Duration</option>
+                <option value="calories">Sort by Calories</option>
+                <option value="distance">Sort by Distance</option>
+              </select>
+
+              <select id="workoutSortOrder" class="form-control form-select">
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </select>
+
+              <button class="btn btn-secondary btn-sm" id="resetWorkoutFiltersBtn">Reset</button>
+              <button class="btn btn-primary btn-sm" id="createNewWorkoutBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Add Workout</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Workouts Table -->
+          <div class="table-responsive">
+            <table class="data-table" id="workoutsTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Date</th>
+                  <th>Duration</th>
+                  <th>Calories</th>
+                  <th>Distance</th>
+                  <th>Notes</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="workoutsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer" id="workoutsTableFooter">
+            <span id="workoutsCountText">Showing 0 workouts</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: ADD / EDIT WORKOUT -->
+      <section class="page-view" id="view-add-workout">
+        <div class="content-card form-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title" id="formWorkoutTitle">Log a New Workout</h3>
+              <p class="card-subtitle">Record your session details to update dashboard metrics and analytics</p>
+            </div>
+          </div>
+
+          <form id="workoutForm" class="standard-form">
+            <input type="hidden" id="editWorkoutId" value="">
+
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label for="workoutTypeInput" class="form-label">Workout Type <span class="required">*</span></label>
+                <select id="workoutTypeInput" class="form-control form-select" required>
+                  <option value="" disabled selected>Select activity...</option>
+                  <option value="Running">🏃 Running</option>
+                  <option value="Walking">🚶 Walking</option>
+                  <option value="Cycling">🚴 Cycling</option>
+                  <option value="Strength Training">🏋️ Strength Training</option>
+                  <option value="Yoga">🧘 Yoga</option>
+                </select>
+                <div class="form-error" id="err-workoutType"></div>
+              </div>
+
+              <div class="form-group col-6">
+                <label for="workoutDateInput" class="form-label">Workout Date <span class="required">*</span></label>
+                <input type="date" id="workoutDateInput" class="form-control" required>
+                <div class="form-error" id="err-workoutDate"></div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-4">
+                <label for="workoutDurationInput" class="form-label">Duration (minutes) <span class="required">*</span></label>
+                <input type="number" id="workoutDurationInput" class="form-control" placeholder="e.g. 45" min="1" max="1440" required>
+                <div class="form-error" id="err-workoutDuration"></div>
+              </div>
+
+              <div class="form-group col-4">
+                <label for="workoutCaloriesInput" class="form-label">Calories Burned (kcal) <span class="required">*</span></label>
+                <input type="number" id="workoutCaloriesInput" class="form-control" placeholder="e.g. 350" min="0" max="10000" required>
+                <div class="form-error" id="err-workoutCalories"></div>
+              </div>
+
+              <div class="form-group col-4">
+                <label for="workoutDistanceInput" class="form-label">Distance (km)</label>
+                <input type="number" id="workoutDistanceInput" class="form-control" placeholder="e.g. 5.5" min="0" step="0.1" value="0.0">
+                <div class="form-error" id="err-workoutDistance"></div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="workoutNotesInput" class="form-label">Notes & Observations</label>
+              <textarea id="workoutNotesInput" class="form-control" rows="3" placeholder="How did the session feel? Pace, sets, environment, recovery notes..."></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" id="cancelWorkoutFormBtn">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="saveWorkoutBtn">
+                <span id="saveWorkoutBtnText">Save Workout</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- VIEW 4: ACTIVITY TRACKER -->
+      <section class="page-view" id="view-activity">
+        <div class="grid-two-unequal">
+          <!-- Daily Activity Form -->
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Daily Activity Logger</h3>
+                <p class="card-subtitle">Log your daily steps, hydration, active minutes, and calories</p>
+              </div>
+            </div>
+
+            <form id="activityForm" class="standard-form">
+              <div class="form-group">
+                <label for="activityDateInput" class="form-label">Activity Date <span class="required">*</span></label>
+                <input type="date" id="activityDateInput" class="form-control" required>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-6">
+                  <label for="activityStepsInput" class="form-label">Step Count</label>
+                  <input type="number" id="activityStepsInput" class="form-control" placeholder="e.g. 8500" min="0">
+                </div>
+                <div class="form-group col-6">
+                  <label for="activityWaterInput" class="form-label">Water Intake (Liters)</label>
+                  <div class="input-with-quick">
+                    <input type="number" id="activityWaterInput" class="form-control" placeholder="e.g. 2.5" min="0" step="0.1">
+                    <div class="quick-add-buttons">
+                      <button type="button" class="btn-chip" id="addWater250Btn">+0.25L</button>
+                      <button type="button" class="btn-chip" id="addWater500Btn">+0.50L</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-4">
+                  <label for="activityActiveMinsInput" class="form-label">Active Minutes</label>
+                  <input type="number" id="activityActiveMinsInput" class="form-control" placeholder="e.g. 60" min="0">
+                </div>
+                <div class="form-group col-4">
+                  <label for="activityDistanceInput" class="form-label">Distance (km)</label>
+                  <input type="number" id="activityDistanceInput" class="form-control" placeholder="e.g. 6.2" min="0" step="0.1">
+                </div>
+                <div class="form-group col-4">
+                  <label for="activityCaloriesInput" class="form-label">Active Calories (kcal)</label>
+                  <input type="number" id="activityCaloriesInput" class="form-control" placeholder="e.g. 2100" min="0">
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="saveActivityBtn">Update Daily Activity</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Activity History Table -->
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Recent Activity Logs</h3>
+                <p class="card-subtitle">Daily step counts and hydration history</p>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="activityHistoryTable">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Steps</th>
+                    <th>Distance</th>
+                    <th>Water</th>
+                    <th>Calories</th>
+                  </tr>
+                </thead>
+                <tbody id="activityHistoryBody">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 5: ANALYTICS -->
+      <section class="page-view" id="view-analytics">
+        <div class="analytics-kpi-row">
+          <div class="metric-card">
+            <div class="metric-header"><span class="metric-title">Total Workouts</span><div class="metric-icon">🏆</div></div>
+            <div class="metric-value" id="anaTotalWorkouts">0</div>
+            <div class="metric-subtext text-muted">All-time recorded sessions</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header"><span class="metric-title">Average Duration</span><div class="metric-icon">⏱️</div></div>
+            <div class="metric-value"><span id="anaAvgDuration">0</span> <span class="metric-unit">min</span></div>
+            <div class="metric-subtext text-muted">Per session average</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header"><span class="metric-title">Total Energy Burned</span><div class="metric-icon">🔥</div></div>
+            <div class="metric-value"><span id="anaTotalCalories">0</span> <span class="metric-unit">kcal</span></div>
+            <div class="metric-subtext text-muted">Total workout calories</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header"><span class="metric-title">Total Distance</span><div class="metric-icon">🗺️</div></div>
+            <div class="metric-value"><span id="anaTotalDistance">0.0</span> <span class="metric-unit">km</span></div>
+            <div class="metric-subtext text-muted">All logged workout travel</div>
+          </div>
+        </div>
+
+        <div class="analytics-charts-grid">
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Weekly Step Consistency</h3>
+                <p class="card-subtitle">Daily steps vs. your configured step goal</p>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="analyticsStepsChart"></canvas>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Daily Calorie Expenditure</h3>
+                <p class="card-subtitle">Caloric burn trend across the past week</p>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="analyticsCaloriesChart"></canvas>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Workout Distribution by Type</h3>
+                <p class="card-subtitle">Distribution of training varieties</p>
+              </div>
+            </div>
+            <div class="chart-container doughnut-container">
+              <canvas id="analyticsDistributionChart"></canvas>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Goal Adherence Summary</h3>
+                <p class="card-subtitle">Current progress against active targets</p>
+              </div>
+            </div>
+            <div class="goal-bars-container" id="analyticsGoalBars">
+              <!-- Dynamically populated progress bars -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 6: GOALS & SETTINGS -->
+      <section class="page-view" id="view-goals">
+        <div class="settings-grid">
+          <!-- Goals Form -->
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Fitness Target Configuration</h3>
+                <p class="card-subtitle">Personalize your daily targets and weekly milestones</p>
+              </div>
+            </div>
+
+            <form id="goalsForm" class="standard-form">
+              <div class="form-group">
+                <label for="goalStepInput" class="form-label">Daily Step Goal (steps) <span class="required">*</span></label>
+                <input type="number" id="goalStepInput" class="form-control" min="1000" max="100000" step="500" required>
+                <small class="form-hint">Standard recommendation: 8,000 - 10,000 steps daily</small>
+              </div>
+
+              <div class="form-group">
+                <label for="goalWeeklyWorkoutsInput" class="form-label">Weekly Workout Target (sessions) <span class="required">*</span></label>
+                <input type="number" id="goalWeeklyWorkoutsInput" class="form-control" min="1" max="21" required>
+                <small class="form-hint">Target number of training sessions per week</small>
+              </div>
+
+              <div class="form-group">
+                <label for="goalWaterInput" class="form-label">Daily Water Goal (Liters) <span class="required">*</span></label>
+                <input type="number" id="goalWaterInput" class="form-control" min="0.5" max="10.0" step="0.1" required>
+                <small class="form-hint">Target daily hydration volume</small>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="saveGoalsBtn">Save Goal Preferences</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Application Settings & Laboratory Controls -->
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Laboratory & Application Settings</h3>
+                <p class="card-subtitle">Interface appearance, pipeline information, and demo data</p>
+              </div>
+            </div>
+
+            <div class="settings-list">
+              <div class="settings-item">
+                <div class="settings-info">
+                  <div class="settings-title">Color Theme</div>
+                  <div class="settings-desc">Toggle between high-contrast Dark Mode and clean Light Mode</div>
+                </div>
+                <div class="settings-control">
+                  <button class="btn btn-secondary btn-sm" id="toggleThemeSettingsBtn">Switch to Light Mode</button>
+                </div>
+              </div>
+
+              <div class="settings-item">
+                <div class="settings-info">
+                  <div class="settings-title">Reset Demo Records</div>
+                  <div class="settings-desc">Restores initial sample workouts, daily activities, and baseline goals for laboratory evaluations</div>
+                </div>
+                <div class="settings-control">
+                  <button class="btn btn-danger btn-sm" id="resetDemoDataBtn">Reset Database</button>
+                </div>
+              </div>
+
+              <div class="settings-item">
+                <div class="settings-info">
+                  <div class="settings-title">DevOps Infrastructure Info</div>
+                  <div class="settings-desc">Container runtime, health check status, and pipeline architecture</div>
+                </div>
+                <div class="devops-info-badge">
+                  <span>Flask 3.0.0</span> &bull; <span>Python 3.11</span> &bull; <span>SQLite 3</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <button class="mobile-nav-item active" data-page="dashboard">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      <span>Dash</span>
+    </button>
+    <button class="mobile-nav-item" data-page="workouts">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11M6.5 17.5h11M2 12h20M7 2v20M17 2v20"/></svg>
+      <span>Workouts</span>
+    </button>
+    <button class="mobile-nav-item" data-page="add-workout">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+      <span>Add</span>
+    </button>
+    <button class="mobile-nav-item" data-page="activity">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      <span>Activity</span>
+    </button>
+    <button class="mobile-nav-item" data-page="analytics">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      <span>Stats</span>
+    </button>
+  </nav>
+
+  <!-- Workout Details Modal -->
+  <div class="modal-backdrop" id="workoutDetailsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalWorkoutTitle">Workout Details</h3>
+        <button class="modal-close" id="closeWorkoutDetailsModal">&times;</button>
+      </div>
+      <div class="modal-body" id="modalWorkoutBody">
+        <!-- Injected details -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modalCloseBtn">Close</button>
+        <button class="btn btn-primary" id="modalEditWorkoutBtn">Edit Workout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-backdrop" id="deleteConfirmModal">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <h3 class="modal-title">Confirm Deletion</h3>
+        <button class="modal-close" id="closeDeleteModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to permanently delete this workout? This action will remove the record from your fitness history.</p>
+        <div class="delete-workout-preview" id="deleteWorkoutPreview"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Delete Workout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

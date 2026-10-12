@@ -1,0 +1,28 @@
+services:
+  fittrack:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fittrack:latest
+    container_name: fittrack-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_PATH=/app/data/fittrack.db
+      - SECRET_KEY=fittrack-production-secure-key-2026
+      - PORT=5000
+      - HOST=0.0.0.0
+    volumes:
+      - fittrack_data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  fittrack_data:
+    name: fittrack_sqlite_data

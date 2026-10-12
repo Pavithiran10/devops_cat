@@ -1,0 +1,23 @@
+---
+# FitTrack Application Deployment Variables
+app_name: "fittrack"
+docker_image_name: "fittrack"
+docker_image_tag: "latest"
+container_name: "fittrack-app"
+
+# Network & Ports
+host_port: 5000
+container_port: 5000
+
+# Filesystem & Persistence Directories
+app_dir: "/opt/fittrack"
+data_dir: "/opt/fittrack/data"
+sqlite_db_filename: "fittrack.db"
+
+# Container Configuration
+restart_policy: "unless-stopped"
+
+# Health Check Settings
+health_check_url: "http://127.0.0.1:{{ host_port }}/api/health"
+health_check_retries: 12
+health_check_delay: 5

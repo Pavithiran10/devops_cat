@@ -1,0 +1,89 @@
+---
+- name: Deploy FitTrack Application with Docker and SQLite Persistence
+  hosts: "{{ target_hosts | default('local') }}"
+  gather_facts: true
+  become: false
+
+  tasks:
+    - name: 1. Verify Docker Engine is installed and accessible
+      ansible.builtin.command: docker --version
+      register: docker_version_output
+      changed_when: false
+
+    - name: Display detected Docker version
+      ansible.builtin.debug:
+        msg: "Target host Docker runtime verified: {{ docker_version_output.stdout }}"
+
+    - name: 2. Ensure application root directory exists
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: 3. Ensure persistent SQLite data directory exists
+      ansible.builtin.file:
+        path: "{{ data_dir }}"
+        state: directory
+        mode: '0777'
+
+    - name: 4. Check if Docker image is available locally or needs pulling
+      ansible.builtin.command: "docker image inspect {{ docker_image_name }}:{{ docker_image_tag }}"
+      register: image_inspect
+      ignore_errors: true
+      changed_when: false
+
+    - name: Pull Docker image if not present locally
+      ansible.builtin.command: "docker pull {{ docker_image_name }}:{{ docker_image_tag }}"
+      when: image_inspect.failed
+      register: pull_result
+      changed_when: pull_result.rc == 0
+
+    - name: 5. Stop and remove existing FitTrack container if running
+      ansible.builtin.shell: |
+        if [ "$(docker ps -aq -f name=^{{ container_name }}$)" ]; then
+          docker rm -f {{ container_name }}
+        fi
+      register: stop_container
+      changed_when: stop_container.stdout != ""
+
+    - name: 6. Run new FitTrack container with persistent SQLite volume
+      ansible.builtin.command: >
+        docker run -d
+        --name {{ container_name }}
+        --restart {{ restart_policy }}
+        -p {{ host_port }}:{{ container_port }}
+        -v {{ data_dir }}:/app/data
+        -e FLASK_ENV=production
+        -e DATABASE_PATH=/app/data/{{ sqlite_db_filename }}
+        -e PORT={{ container_port }}
+        {{ docker_image_name }}:{{ docker_image_tag }}
+      register: run_container
+      changed_when: run_container.rc == 0
+
+    - name: 7. Wait for FitTrack application to initialize
+      ansible.builtin.pause:
+        seconds: 4
+
+    - name: 8. Verify application health check endpoint
+      ansible.builtin.uri:
+        url: "{{ health_check_url }}"
+        method: GET
+        status_code: 200
+        return_content: true
+      register: health_check_response
+      retries: "{{ health_check_retries }}"
+      delay: "{{ health_check_delay }}"
+      until: health_check_response.status == 200 and 'healthy' in health_check_response.content
+
+    - name: 9. Report Deployment Success
+      ansible.builtin.debug:
+        msg:
+          - "=========================================================="
+          - "FitTrack Deployment Completed Successfully!"
+          - "Container Name: {{ container_name }}"
+          - "Image:          {{ docker_image_name }}:{{ docker_image_tag }}"
+          - "Application URL: http://localhost:{{ host_port }}"
+          - "Health Status:   {{ health_check_response.json.status }}"
+          - "Database Engine: {{ health_check_response.json.database }}"
+          - "Data Directory:  {{ data_dir }}"
+          - "=========================================================="
