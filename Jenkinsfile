@@ -7,6 +7,13 @@ pipeline {
         disableConcurrentBuilds()
     }
 
+    triggers {
+        // Trigger immediately on GitHub push webhook
+        githubPush()
+        // Automatic SCM polling fallback every 2 minutes (works even if Jenkins is on localhost)
+        pollSCM('H/2 * * * *')
+    }
+
     parameters {
         booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run Pytest automated testing suite')
         booleanParam(name: 'BUILD_DOCKER', defaultValue: true, description: 'Build and package Docker container image')
