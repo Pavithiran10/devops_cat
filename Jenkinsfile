@@ -19,9 +19,9 @@ pipeline {
         booleanParam(name: 'BUILD_DOCKER', defaultValue: true, description: 'Build and package Docker container image')
         booleanParam(name: 'PUSH_IMAGE', defaultValue: false, description: 'Push built image to Docker Hub registry')
         booleanParam(name: 'TRIGGER_ANSIBLE', defaultValue: false, description: 'Execute Ansible deployment automation')
-        stringParam(name: 'IMAGE_NAME', defaultValue: 'fittrack-app', description: 'Docker Image Name')
-        stringParam(name: 'IMAGE_TAG', defaultValue: "${env.BUILD_NUMBER ?: 'latest'}", description: 'Docker Image Tag')
-        stringParam(name: 'ANSIBLE_TARGET', defaultValue: 'local', description: 'Target Ansible inventory host group')
+        string(name: 'IMAGE_NAME', defaultValue: 'fittrack-app', description: 'Docker Image Name')
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker Image Tag')
+        string(name: 'ANSIBLE_TARGET', defaultValue: 'local', description: 'Target Ansible inventory host group')
     }
 
     environment {
