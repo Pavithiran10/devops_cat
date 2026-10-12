@@ -41,14 +41,23 @@ pipeline {
             }
         }
 
-        // Stage 2: Set up Python 3.11 Environment
-        stage('2. Setup Python 3.11') {
+        // Stage 2: Set up Python Environment
+        stage('2. Setup Python') {
             steps {
-                echo '=== Stage 2: Verifying Python 3.11 installation & virtual environment ==='
-                sh '''
-                    python3 --version || python --version
-                    python3 -m venv .jenkins_venv || python -m venv .jenkins_venv
-                '''
+                echo '=== Stage 2: Verifying Python installation & virtual environment ==='
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            python3 --version || python --version
+                            python3 -m venv .jenkins_venv || python -m venv .jenkins_venv
+                        '''
+                    } else {
+                        bat '''
+                            python --version
+                            python -m venv .jenkins_venv
+                        '''
+                    }
+                }
             }
         }
 
@@ -56,11 +65,21 @@ pipeline {
         stage('3. Install Dependencies') {
             steps {
                 echo '=== Stage 3: Installing dependencies from requirements.txt ==='
-                sh '''
-                    . .jenkins_venv/bin/activate || . .jenkins_venv/Scripts/activate
-                    python -m pip install --upgrade pip
-                    python -m pip install -r requirements.txt
-                '''
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            . .jenkins_venv/bin/activate
+                            python -m pip install --upgrade pip
+                            python -m pip install -r requirements.txt
+                        '''
+                    } else {
+                        bat '''
+                            call .jenkins_venv\\Scripts\\activate.bat
+                            python -m pip install --upgrade pip
+                            python -m pip install -r requirements.txt
+                        '''
+                    }
+                }
             }
         }
 
@@ -71,10 +90,19 @@ pipeline {
             }
             steps {
                 echo '=== Stage 4: Running automated Pytest suite (Fail immediately on error) ==='
-                sh '''
-                    . .jenkins_venv/bin/activate || . .jenkins_venv/Scripts/activate
-                    pytest -v --junitxml=pytest-results.xml
-                '''
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            . .jenkins_venv/bin/activate
+                            pytest -v --junitxml=pytest-results.xml
+                        '''
+                    } else {
+                        bat '''
+                            call .jenkins_venv\\Scripts\\activate.bat
+                            pytest -v --junitxml=pytest-results.xml
+                        '''
+                    }
+                }
             }
             post {
                 always {
@@ -87,11 +115,21 @@ pipeline {
         stage('5. Syntax & Config Checks') {
             steps {
                 echo '=== Stage 5: Verifying syntax, schema scripts, and configuration ==='
-                sh '''
-                    . .jenkins_venv/bin/activate || . .jenkins_venv/Scripts/activate
-                    python -m py_compile app.py config.py database/db.py database/init_db.py services/analytics.py
-                    echo "Application syntax validation passed."
-                '''
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            . .jenkins_venv/bin/activate
+                            python -m py_compile app.py config.py database/db.py database/init_db.py services/analytics.py
+                            echo "Application syntax validation passed."
+                        '''
+                    } else {
+                        bat '''
+                            call .jenkins_venv\\Scripts\\activate.bat
+                            python -m py_compile app.py config.py database/db.py database/init_db.py services/analytics.py
+                            echo Application syntax validation passed.
+                        '''
+                    }
+                }
             }
         }
 
@@ -102,9 +140,17 @@ pipeline {
             }
             steps {
                 echo "=== Stage 6: Building Docker image ${params.IMAGE_NAME}:${params.IMAGE_TAG} ==="
-                sh """
-                    docker build -t ${params.IMAGE_NAME}:${params.IMAGE_TAG} -t ${params.IMAGE_NAME}:latest .
-                """
+                script {
+                    if (isUnix()) {
+                        sh """
+                            docker build -t ${params.IMAGE_NAME}:${params.IMAGE_TAG} -t ${params.IMAGE_NAME}:latest .
+                        """
+                    } else {
+                        bat """
+                            docker build -t ${params.IMAGE_NAME}:${params.IMAGE_TAG} -t ${params.IMAGE_NAME}:latest .
+                        """
+                    }
+                }
             }
         }
 
@@ -115,21 +161,27 @@ pipeline {
             }
             steps {
                 echo '=== Stage 7: Starting ephemeral container and testing /api/health endpoint ==='
-                sh """
-                    # Stop any previous leftover test container
-                    docker rm -f ${env.TEST_CONTAINER_NAME} || true
-                    
-                    # Launch container on ephemeral test port 5055
-                    docker run -d --name ${env.TEST_CONTAINER_NAME} -p 5055:5000 ${params.IMAGE_NAME}:${params.IMAGE_TAG}
-                    
-                    # Wait for container startup and query health check
-                    sleep 6
-                    curl --fail --retry 5 --retry-delay 2 http://localhost:5055/api/health
-                    
-                    # Clean up test container
-                    docker rm -f ${env.TEST_CONTAINER_NAME}
-                    echo "Container health check successfully validated."
-                """
+                script {
+                    if (isUnix()) {
+                        sh """
+                            docker rm -f ${env.TEST_CONTAINER_NAME} || true
+                            docker run -d --name ${env.TEST_CONTAINER_NAME} -p 5055:5000 ${params.IMAGE_NAME}:${params.IMAGE_TAG}
+                            sleep 6
+                            curl --fail --retry 5 --retry-delay 2 http://localhost:5055/api/health
+                            docker rm -f ${env.TEST_CONTAINER_NAME}
+                            echo "Container health check successfully validated."
+                        """
+                    } else {
+                        bat """
+                            docker rm -f ${env.TEST_CONTAINER_NAME} 2>nul || ver >nul
+                            docker run -d --name ${env.TEST_CONTAINER_NAME} -p 5055:5000 ${params.IMAGE_NAME}:${params.IMAGE_TAG}
+                            timeout /t 6 /nobreak
+                            curl --fail --retry 5 --retry-delay 2 http://localhost:5055/api/health
+                            docker rm -f ${env.TEST_CONTAINER_NAME}
+                            echo Container health check successfully validated.
+                        """
+                    }
+                }
             }
         }
 
@@ -140,9 +192,17 @@ pipeline {
             }
             steps {
                 echo '=== Stage 8: Tagging Docker image for release ==='
-                sh """
-                    docker tag ${params.IMAGE_NAME}:${params.IMAGE_TAG} ${params.IMAGE_NAME}:build-${params.IMAGE_TAG}
-                """
+                script {
+                    if (isUnix()) {
+                        sh """
+                            docker tag ${params.IMAGE_NAME}:${params.IMAGE_TAG} ${params.IMAGE_NAME}:build-${params.IMAGE_TAG}
+                        """
+                    } else {
+                        bat """
+                            docker tag ${params.IMAGE_NAME}:${params.IMAGE_TAG} ${params.IMAGE_NAME}:build-${params.IMAGE_TAG}
+                        """
+                    }
+                }
             }
         }
 
@@ -154,14 +214,27 @@ pipeline {
             steps {
                 echo '=== Stage 9: Authenticating and pushing Docker image to registry ==='
                 withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh """
-                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
-                        docker tag ${params.IMAGE_NAME}:${params.IMAGE_TAG} \$DOCKER_USER/${params.IMAGE_NAME}:${params.IMAGE_TAG}
-                        docker tag ${params.IMAGE_NAME}:latest \$DOCKER_USER/${params.IMAGE_NAME}:latest
-                        docker push \$DOCKER_USER/${params.IMAGE_NAME}:${params.IMAGE_TAG}
-                        docker push \$DOCKER_USER/${params.IMAGE_NAME}:latest
-                        docker logout
-                    """
+                    script {
+                        if (isUnix()) {
+                            sh """
+                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                                docker tag ${params.IMAGE_NAME}:${params.IMAGE_TAG} \$DOCKER_USER/${params.IMAGE_NAME}:${params.IMAGE_TAG}
+                                docker tag ${params.IMAGE_NAME}:latest \$DOCKER_USER/${params.IMAGE_NAME}:latest
+                                docker push \$DOCKER_USER/${params.IMAGE_NAME}:${params.IMAGE_TAG}
+                                docker push \$DOCKER_USER/${params.IMAGE_NAME}:latest
+                                docker logout
+                            """
+                        } else {
+                            bat """
+                                echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                                docker tag ${params.IMAGE_NAME}:${params.IMAGE_TAG} %DOCKER_USER%/${params.IMAGE_NAME}:${params.IMAGE_TAG}
+                                docker tag ${params.IMAGE_NAME}:latest %DOCKER_USER%/${params.IMAGE_NAME}:latest
+                                docker push %DOCKER_USER%/${params.IMAGE_NAME}:${params.IMAGE_TAG}
+                                docker push %DOCKER_USER%/${params.IMAGE_NAME}:latest
+                                docker logout
+                            """
+                        }
+                    }
                 }
             }
         }
@@ -173,10 +246,18 @@ pipeline {
             }
             steps {
                 echo "=== Stage 10: Executing Ansible deployment on target host: ${params.ANSIBLE_TARGET} ==="
-                sh """
-                    ansible-playbook -i ansible/inventory.ini ansible/playbook.yml \
-                        --extra-vars "docker_image_tag=${params.IMAGE_TAG} target_hosts=${params.ANSIBLE_TARGET}"
-                """
+                script {
+                    if (isUnix()) {
+                        sh """
+                            ansible-playbook -i ansible/inventory.ini ansible/playbook.yml \
+                                --extra-vars "docker_image_tag=${params.IMAGE_TAG} target_hosts=${params.ANSIBLE_TARGET}"
+                        """
+                    } else {
+                        bat """
+                            ansible-playbook -i ansible/inventory.ini ansible/playbook.yml --extra-vars "docker_image_tag=${params.IMAGE_TAG} target_hosts=${params.ANSIBLE_TARGET}"
+                        """
+                    }
+                }
             }
         }
     }
@@ -184,9 +265,17 @@ pipeline {
     post {
         always {
             echo '=== Pipeline Execution Completed ==='
-            sh """
-                docker rm -f ${env.TEST_CONTAINER_NAME} 2>/dev/null || true
-            """
+            script {
+                if (isUnix()) {
+                    sh """
+                        docker rm -f ${env.TEST_CONTAINER_NAME} 2>/dev/null || true
+                    """
+                } else {
+                    bat """
+                        docker rm -f ${env.TEST_CONTAINER_NAME} 2>nul || ver >nul
+                    """
+                }
+            }
         }
         success {
             echo 'FitTrack CI/CD pipeline completed successfully.'
