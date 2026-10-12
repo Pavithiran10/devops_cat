@@ -11,7 +11,8 @@ container_port: 5000
 
 # Filesystem & Persistence Directories
 app_dir: "/opt/fittrack"
-data_dir: "/opt/fittrack/data"
+docker_volume_name: "fittrack_sqlite_data"
+data_dir: "fittrack_sqlite_data"
 sqlite_db_filename: "fittrack.db"
 
 # Container Configuration
